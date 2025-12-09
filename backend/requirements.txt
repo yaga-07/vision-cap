@@ -17,5 +17,6 @@ einops==0.8.0
 watchdog==6.0.0
 aiofiles==24.1.0
 pydantic==2.9.2
+pydantic-settings==2.6.1
 python-dotenv==1.0.1
 
