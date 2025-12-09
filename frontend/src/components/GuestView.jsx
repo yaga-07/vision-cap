@@ -61,6 +61,25 @@ function GuestView() {
     }
   }, [])
 
+  const searchSimilarImages = async (photoId) => {
+    if (!photoId) return
+    
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const response = await axios.get(`${API_URL}/search/similar`, {
+        params: { photo_id: photoId, limit: 20 }
+      })
+      setResults(response.data)
+    } catch (err) {
+      setError('Failed to find similar images. Please try again.')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const downloadImage = async (imageUrl) => {
     try {
       const response = await fetch(`${API_URL}${imageUrl}`)
@@ -171,6 +190,9 @@ function GuestView() {
                   src={`${API_URL}${photo.thumbnail_url}`}
                   alt={photo.caption || 'Photo'}
                   className="photo-thumbnail"
+                  onClick={() => searchSimilarImages(photo.photo_id)}
+                  style={{ cursor: 'pointer' }}
+                  title="Click to find similar images"
                   onLongPress={() => downloadImage(photo.image_url)}
                 />
                 {photo.caption && (
@@ -182,13 +204,29 @@ function GuestView() {
                     <span>Match: {(photo.similarity_score * 100).toFixed(1)}%</span>
                   </div>
                 )}
-                <button
-                  onClick={() => downloadImage(photo.image_url)}
-                  className="download-button"
-                >
-                  <Download size={16} />
-                  <span>Download</span>
-                </button>
+                <div className="photo-actions">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      searchSimilarImages(photo.photo_id)
+                    }}
+                    className="similar-button"
+                    title="Find similar images"
+                  >
+                    <ImageIcon size={16} />
+                    <span>Find Similar</span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      downloadImage(photo.image_url)
+                    }}
+                    className="download-button"
+                  >
+                    <Download size={16} />
+                    <span>Download</span>
+                  </button>
+                </div>
               </div>
             ))}
           </div>

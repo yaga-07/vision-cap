@@ -49,6 +49,26 @@ def check_dependencies():
     except ImportError:
         missing.append("sentence-transformers")
     
+    try:
+        import transformers
+    except ImportError:
+        missing.append("transformers")
+    
+    try:
+        import torch
+    except ImportError:
+        missing.append("torch")
+    
+    try:
+        import timm
+    except ImportError:
+        missing.append("timm")
+    
+    try:
+        import einops
+    except ImportError:
+        missing.append("einops")
+    
     if missing:
         print("=" * 60)
         print("Missing Dependencies")
@@ -114,15 +134,61 @@ except Exception as e:
     sys.exit(1)
 
 print()
+
+# Download Florence-2-base
+print("3. Downloading Florence-2-base (for tag and caption extraction)...")
+try:
+    from transformers import AutoProcessor, AutoModelForCausalLM
+    import torch
+    
+    print("   Downloading processor...")
+    florence_processor = AutoProcessor.from_pretrained(
+        "microsoft/Florence-2-base",
+        cache_dir=HUGGINGFACE_DIR,
+        trust_remote_code=True
+    )
+    print("   ✓ Processor downloaded")
+    
+    print("   Downloading model (this may take a while, ~1.5GB)...")
+    florence_model = AutoModelForCausalLM.from_pretrained(
+        "microsoft/Florence-2-base",
+        cache_dir=HUGGINGFACE_DIR,
+        trust_remote_code=True,
+        torch_dtype=torch.float32
+    )
+    print("   ✓ Florence-2-base downloaded successfully")
+    print(f"   Location: {HUGGINGFACE_DIR}")
+    print("   Note: Model will be loaded into memory when needed")
+except ImportError as e:
+    print(f"   ✗ Missing dependency: {e}")
+    print("   Please install required dependencies:")
+    print("     pip install transformers torch timm einops")
+    print("   Or install all requirements:")
+    print("     pip install -r backend/requirements.txt")
+    sys.exit(1)
+except Exception as e:
+    print(f"   ✗ Error downloading Florence-2-base: {e}")
+    print("   Warning: Tag and caption extraction will be disabled")
+    print("   You can continue without Florence-2, but text search accuracy may be reduced")
+    import traceback
+    traceback.print_exc()
+    # Don't exit - allow the script to continue
+    print("   Continuing without Florence-2...")
+
+print()
 print("=" * 60)
-print("All models downloaded successfully!")
+print("Model Download Complete!")
 print("=" * 60)
 print()
 print("Model sizes:")
 print(f"  InsightFace: ~500MB")
 print(f"  CLIP: ~600MB")
-print(f"  Total: ~1.1GB")
+print(f"  Florence-2-base: ~1.5GB")
+print(f"  Total: ~2.6GB")
 print()
 print("Models are now cached locally and will be reused on next startup.")
+print()
+print("Note: Florence-2-base is optional but recommended for better text search accuracy.")
+print("      It extracts object tags and detailed captions from images.")
 print()
 

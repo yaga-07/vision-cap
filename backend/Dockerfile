@@ -5,6 +5,7 @@ WORKDIR /app
 # Install system dependencies for OpenCV and image processing
 # Note: libgl1-mesa-glx is deprecated in Debian Trixie, using libgl1 instead
 # Also install build tools needed for compiling insightface Cython extensions
+# libheif-dev and libde265-dev are needed for HEIC image support
 RUN apt-get update && apt-get install -y \
     libgl1 \
     libglib2.0-0 \
@@ -12,6 +13,8 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgomp1 \
+    libheif-dev \
+    libde265-dev \
     g++ \
     make \
     build-essential \

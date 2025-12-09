@@ -2,6 +2,7 @@ fastapi==0.115.0
 uvicorn[standard]==0.32.0
 python-multipart==0.0.12
 pillow==11.0.0
+pillow-heif==0.21.0
 opencv-python==4.10.0.84
 numpy==1.26.4
 qdrant-client==1.11.2
@@ -11,6 +12,8 @@ sentence-transformers==3.3.1
 transformers==4.46.3
 torch==2.5.1
 torchvision==0.20.1
+timm==1.0.9
+einops==0.8.0
 watchdog==6.0.0
 aiofiles==24.1.0
 pydantic==2.9.2
