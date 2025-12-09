@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Data directories (mounted as volumes, don't commit)
+images/
+models/
+qdrant_storage/
+
+# Environment
+.env
+.venv
+venv/
+ENV/
+

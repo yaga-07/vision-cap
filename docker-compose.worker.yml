@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+      - ./images:/app/images
+      - ./qdrant_storage:/app/qdrant_storage
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+    depends_on:
+      - qdrant
+    networks:
+      - vision_cap_network
+    command: python worker.py
+
+networks:
+  vision_cap_network:
+    external: true
+

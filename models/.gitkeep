@@ -1,0 +1,38 @@
+# Models Directory
+
+This directory stores AI model weights locally.
+
+## Model Storage Structure
+
+- `insightface/` - InsightFace face recognition models
+- `sentence_transformers/` - CLIP and other sentence transformer models
+- `huggingface/` - HuggingFace transformers models (if used)
+
+## Downloading Models
+
+Models will be automatically downloaded on first run, or you can download them manually using:
+
+```bash
+# Download InsightFace models
+python scripts/download_models.py
+
+# Or download individually
+python -c "from insightface.app import FaceAnalysis; FaceAnalysis(name='buffalo_l')"
+python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('clip-ViT-B-32')"
+```
+
+## Clearing Models
+
+To free up space, simply delete the contents of this directory:
+
+```bash
+# Remove all models (~2-3GB)
+rm -rf models/*
+
+# Or remove specific models
+rm -rf models/insightface/
+rm -rf models/sentence_transformers/
+```
+
+Models will be re-downloaded automatically on next startup if missing.
+

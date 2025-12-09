@@ -1,0 +1,81 @@
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    networks:
+      - vision_cap_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./images:/app/images
+      - ./qdrant_storage:/app/qdrant_storage
+      - ./models:/app/models
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - MODELS_DIR=/app/models
+    depends_on:
+      - qdrant
+    networks:
+      - vision_cap_network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - ./images:/app/public/images
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - vision_cap_network
+    environment:
+      - VITE_API_URL=http://localhost:8000
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+      - ./images:/app/images
+      - ./qdrant_storage:/app/qdrant_storage
+      - ./models:/app/models
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - MODELS_DIR=/app/models
+    depends_on:
+      - qdrant
+      - backend
+    networks:
+      - vision_cap_network
+    command: python worker.py
+    restart: unless-stopped
+
+networks:
+  vision_cap_network:
+    driver: bridge
+
+volumes:
+  qdrant_storage:
+  images:
+
