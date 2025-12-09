@@ -57,3 +57,4 @@ dist/
 build/
 *.egg-info/
 
+backend/logs
