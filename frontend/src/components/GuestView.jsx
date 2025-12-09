@@ -195,8 +195,19 @@ function GuestView() {
                   title="Click to find similar images"
                   onLongPress={() => downloadImage(photo.image_url)}
                 />
-                {photo.caption && (
-                  <div className="photo-caption">{photo.caption}</div>
+                {photo.tags && photo.tags.length > 0 && (
+                  <div className="photo-tags">
+                    {photo.tags.slice(0, 8).map((tag, index) => (
+                      <span key={index} className="tag-chip">
+                        {tag}
+                      </span>
+                    ))}
+                    {photo.tags.length > 8 && (
+                      <span className="tag-chip tag-chip-more">
+                        +{photo.tags.length - 8}
+                      </span>
+                    )}
+                  </div>
                 )}
                 {photo.similarity_score && (
                   <div className="similarity-score">

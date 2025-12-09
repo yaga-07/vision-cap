@@ -12,6 +12,9 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoProcessor, AutoModelForCausalLM
 import torch
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # Register pillow-heif plugin for HEIC support
 try:
     from pillow_heif import register_heif_opener
@@ -44,9 +47,54 @@ clip_model = None
 florence_processor = None
 florence_model = None
 
+def load_api_models():
+    """
+    Load only models required for API server (face detection and text search).
+    Optimized for API server resource usage.
+    Returns: (face_app, clip_model)
+    """
+    global face_app, clip_model
+    
+    print("Loading API models (face detection + text search)...")
+    print(f"Models directory: {MODELS_DIR}")
+    
+    # Load InsightFace for face detection and embedding
+    try:
+        face_app = FaceAnalysis(
+            name='buffalo_l',
+            root=INSIGHTFACE_DIR,
+            providers=['CPUExecutionProvider']
+        )
+        face_app.prepare(ctx_id=-1)  # -1 for CPU, 0 for GPU
+        print(f"✓ InsightFace loaded from {INSIGHTFACE_DIR}")
+    except Exception as e:
+        print(f"Error loading InsightFace: {e}")
+        # Fallback: try without explicit providers
+        try:
+            face_app = FaceAnalysis(name='buffalo_l', root=INSIGHTFACE_DIR)
+            face_app.prepare(ctx_id=-1)
+            print(f"✓ InsightFace loaded (fallback) from {INSIGHTFACE_DIR}")
+        except Exception as e2:
+            print(f"Failed to load InsightFace: {e2}")
+            raise
+    
+    # Load CLIP for semantic search
+    try:
+        clip_model = SentenceTransformer(
+            'clip-ViT-B-32',
+            cache_folder=SENTENCE_TRANSFORMERS_DIR
+        )
+        print(f"✓ CLIP loaded from {SENTENCE_TRANSFORMERS_DIR}")
+    except Exception as e:
+        print(f"Error loading CLIP: {e}")
+        raise
+    
+    print("API models loaded successfully!")
+    return face_app, clip_model
+
 def load_models():
     """
-    Load all AI models once at startup.
+    Load all AI models once at startup (for worker).
     Models are stored in /app/models/ directory.
     Returns: (face_app, clip_model, florence_processor, florence_model)
     """
@@ -216,7 +264,8 @@ def get_text_embedding(text):
 
 def get_florence_tags_and_caption(image_path_or_pil):
     """
-    Extract object detection tags and detailed caption from Florence-2.
+    Extract search-friendly tags and description from Florence-2.
+    Uses photography-focused prompts optimized for user and photographer search queries.
     Returns: (tags_list, caption_string)
     """
     if florence_model is None or florence_processor is None:
@@ -238,58 +287,68 @@ def get_florence_tags_and_caption(image_path_or_pil):
         tags = []
         caption = None
         
-        # Task 1: Object Detection
+        # Task 1: Generate search-friendly tags
+        # Prompt focuses on what users and photographers search for: colors, clothing, roles, events, settings
         try:
-            od_prompt = "<OD>"
-            od_inputs = florence_processor(text=od_prompt, images=img, return_tensors="pt")
-            # Move inputs to same device as model
-            od_inputs = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in od_inputs.items()}
+            tags_prompt = "List all searchable elements: clothing colors (red dress, blue suit), clothing types (wedding dress, tuxedo, veil), people roles (bride, groom, bridesmaid), event types (wedding, ceremony, reception), settings (outdoor, indoor, beach, garden), and key objects. Format as comma-separated tags."
+            tags_inputs = florence_processor(text=tags_prompt, images=img, return_tensors="pt")
+            tags_inputs = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in tags_inputs.items()}
             
             with torch.no_grad():
-                od_generated_ids = florence_model.generate(
-                    input_ids=od_inputs["input_ids"],
-                    pixel_values=od_inputs["pixel_values"],
-                    max_new_tokens=100,
-                    num_beams=3,
+                tags_generated_ids = florence_model.generate(
+                    input_ids=tags_inputs["input_ids"],
+                    pixel_values=tags_inputs["pixel_values"],
+                    max_new_tokens=120,
+                    num_beams=4,
                     do_sample=False
                 )
             
-            od_generated_text = florence_processor.batch_decode(od_generated_ids, skip_special_tokens=False)[0]
-            od_parsed = florence_processor.post_process_generate(od_generated_text, prompt=od_prompt)
-            
-            if od_parsed:
-                # Parse object detection results
-                # Format is typically: "object1. object2. object3."
-                od_text = str(od_parsed).strip()
-                if od_text:
-                    # Split by periods and clean up
-                    tags = [tag.strip().lower() for tag in od_text.split('.') if tag.strip()]
-                    # Remove duplicates while preserving order
-                    tags = list(dict.fromkeys(tags))
+            tags_generated_text = florence_processor.batch_decode(tags_generated_ids, skip_special_tokens=False)[0]
+            print(f"Tags generated text: {tags_generated_text}")
+
+            if tags_generated_text:
+                # Clean and parse tags
+                tags_text = str(tags_generated_text).strip()
+                # Remove prompt artifacts
+                tags_text = tags_text.replace(tags_prompt, "").strip()
+                
+                # Parse tags - handle comma, period, and newline separators
+                import re
+                # Split by commas, periods, semicolons, or newlines
+                raw_tags = re.split(r'[,.;\n]', tags_text)
+                tags = [tag.strip().lower() for tag in raw_tags if tag.strip() and len(tag.strip()) > 2]
+                # Remove duplicates while preserving order
+                tags = list(dict.fromkeys(tags))
+                # Limit tags
+                tags = tags[:30]
         except Exception as e:
-            print(f"Error in object detection: {e}")
+            print(f"Error in tag generation: {e}")
         
-        # Task 2: Detailed Caption
+        # Task 2: Generate search-friendly description
+        # Prompt focuses on detailed photographic description that users would search for
         try:
-            caption_prompt = "<DETAILED_CAPTION>"
+            caption_prompt = "Describe this photograph in detail for search purposes. Include: specific clothing colors and styles (e.g., 'white wedding dress', 'black tuxedo'), people's roles and relationships (bride, groom, family, guests), event type and setting (wedding ceremony outdoors, reception hall), poses and activities (dancing, cutting cake, walking down aisle), and key visual elements. Write as a natural, searchable description."
             caption_inputs = florence_processor(text=caption_prompt, images=img, return_tensors="pt")
-            # Move inputs to same device as model
             caption_inputs = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in caption_inputs.items()}
             
             with torch.no_grad():
                 caption_generated_ids = florence_model.generate(
                     input_ids=caption_inputs["input_ids"],
                     pixel_values=caption_inputs["pixel_values"],
-                    max_new_tokens=100,
-                    num_beams=3,
+                    max_new_tokens=150,
+                    num_beams=4,
                     do_sample=False
                 )
             
             caption_generated_text = florence_processor.batch_decode(caption_generated_ids, skip_special_tokens=False)[0]
-            # caption_parsed = florence_processor.post_process_generate(caption_generated_text, prompt=caption_prompt)
-            
+            print(f"Caption generated text: {caption_generated_text}")
             if caption_generated_text:
                 caption = str(caption_generated_text).strip()
+                # Remove prompt artifacts
+                caption = caption.replace(caption_prompt, "").replace("<s>", "").replace("</s>", "").strip()
+                # Clean up any remaining artifacts
+                if caption.startswith("<DETAILED_CAPTION>"):
+                    caption = caption.replace("<DETAILED_CAPTION>", "").strip()
         except Exception as e:
             print(f"Error in caption generation: {e}")
         
@@ -297,4 +356,6 @@ def get_florence_tags_and_caption(image_path_or_pil):
         
     except Exception as e:
         print(f"Error getting Florence tags and caption: {e}")
+        import traceback
+        traceback.print_exc()
         return [], None

@@ -17,8 +17,11 @@ from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, Fi
 import uuid
 from datetime import datetime
 
-from models import load_models, get_face_embedding, get_clip_embedding, get_text_embedding, load_image_as_cv2
+from models import load_api_models, get_text_embedding, load_image_as_cv2
 import re
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # Initialize Qdrant client
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
@@ -46,11 +49,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Global model instances (loaded at startup)
+# Global model instances (loaded at startup - only API-required models)
 face_app = None
 clip_model = None
-florence_processor = None
-florence_model = None
 
 # Ensure collections exist
 def ensure_collections():
@@ -90,10 +91,11 @@ def ensure_collections():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Load models and ensure collections
-    global face_app, clip_model, florence_processor, florence_model
+    # Startup: Load only API-required models (face detection + text search)
+    global face_app, clip_model
     logger.info("Starting Vision Cap API...")
-    face_app, clip_model, florence_processor, florence_model = load_models()
+    logger.info("Loading API models (face detection + text search only)...")
+    face_app, clip_model = load_api_models()
     ensure_collections()
     logger.info("API startup complete")
     yield

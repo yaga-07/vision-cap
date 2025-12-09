@@ -403,13 +403,46 @@
   transform: scale(1.05);
 }
 
-.photo-caption {
+.photo-tags {
   padding: var(--spacing-md);
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   position: relative;
   z-index: 1;
+  min-height: 3rem;
+}
+
+.tag-chip {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  color: var(--color-primary);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+  cursor: default;
+}
+
+.tag-chip:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%);
+  border-color: rgba(99, 102, 241, 0.5);
+  transform: translateY(-1px);
+}
+
+.tag-chip-more {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.15) 0%, rgba(75, 85, 99, 0.15) 100%);
+  color: var(--color-text-secondary);
+  border-color: rgba(107, 114, 128, 0.3);
+  font-weight: 600;
+}
+
+.tag-chip-more:hover {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.25) 0%, rgba(75, 85, 99, 0.25) 100%);
+  border-color: rgba(107, 114, 128, 0.5);
 }
 
 .similarity-score {
@@ -547,5 +580,15 @@
 
   .photo-thumbnail {
     height: 200px;
+  }
+
+  .photo-tags {
+    padding: var(--spacing-sm);
+    gap: 0.375rem;
+  }
+
+  .tag-chip {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.6875rem;
   }
 }

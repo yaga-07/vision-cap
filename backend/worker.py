@@ -19,11 +19,14 @@ from datetime import datetime
 
 from models import load_models, get_face_embedding, get_clip_embedding, get_florence_tags_and_caption, load_image_as_cv2
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # Configuration
-RAW_DIR = "/app/images/raw"
-PROCESSING_DIR = "/app/images/processing"
-PROCESSED_DIR = "/app/images/processed"
-THUMBNAIL_DIR = "/app/images/thumbnails"
+RAW_DIR = os.getenv("RAW_DIR", "/app/images/raw")
+PROCESSING_DIR = os.getenv("PROCESSING_DIR", "/app/images/processing")
+PROCESSED_DIR = os.getenv("PROCESSED_DIR", "/app/images/processed")
+THUMBNAIL_DIR = os.getenv("THUMBNAIL_DIR", "/app/images/thumbnails")
 
 # Qdrant setup
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
