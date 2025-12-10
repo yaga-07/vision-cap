@@ -2,6 +2,7 @@
 Vision Cap API Server - Modular Architecture
 """
 import os
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -76,9 +77,18 @@ app = FastAPI(
 )
 
 # Mount static files
-if os.path.exists("/app/images") or os.path.exists(settings.processed_dir):
-    images_dir = "/app/images" if os.path.exists("/app/images") else settings.processed_dir
+# Mount from parent images directory to serve both processed and thumbnails
+if os.path.exists("/app/images"):
+    images_dir = "/app/images"
+elif os.path.exists(settings.processed_dir):
+    # Get parent directory (images/) from processed_dir (images/processed)
+    images_dir = str(Path(settings.processed_dir).parent)
+else:
+    images_dir = None
+
+if images_dir and os.path.exists(images_dir):
     app.mount("/images", StaticFiles(directory=images_dir), name="images")
+    logger.info(f"Mounted static files from: {images_dir}")
 
 # CORS middleware
 app.add_middleware(

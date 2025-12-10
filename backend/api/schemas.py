@@ -13,8 +13,7 @@ class SearchResponse(BaseModel):
     tags: Optional[List[str]] = None
     face_count: Optional[int] = None
     similarity_score: Optional[float] = None
-    generic_text: Optional[str] = None
-    photographer_text: Optional[str] = None
+    # Note: generic_text and photographer_text are kept internal for search only
 
 class StatsResponse(BaseModel):
     """Response model for statistics."""

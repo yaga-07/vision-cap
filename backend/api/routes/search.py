@@ -72,9 +72,7 @@ def create_search_router(search_service: SearchService) -> APIRouter:
                     caption=payload.get("caption"),
                     tags=payload.get("tags", []),
                     face_count=payload.get("face_count"),
-                    similarity_score=result["similarity_score"],
-                    generic_text=payload.get("generic_text"),
-                    photographer_text=payload.get("photographer_text")
+                    similarity_score=result["similarity_score"]
                 ))
             
             logger.info(f"Returning {len(formatted_results)} unique photos")
@@ -110,9 +108,7 @@ def create_search_router(search_service: SearchService) -> APIRouter:
                     caption=payload.get("caption"),
                     tags=payload.get("tags", []),
                     face_count=payload.get("face_count"),
-                    similarity_score=result["similarity_score"],
-                    generic_text=payload.get("generic_text"),
-                    photographer_text=payload.get("photographer_text")
+                    similarity_score=result["similarity_score"]
                 ))
             
             logger.info(f"Returning {len(formatted_results)} results")

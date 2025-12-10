@@ -39,9 +39,7 @@ def create_feed_router(storage_service: StorageService) -> APIRouter:
                     thumbnail_url=f"/images/thumbnails/{point.id}.jpg",
                     caption=payload.get("caption"),
                     tags=payload.get("tags", []),
-                    face_count=payload.get("face_count"),
-                    generic_text=payload.get("generic_text"),
-                    photographer_text=payload.get("photographer_text")
+                    face_count=payload.get("face_count")
                 ))
             
             return results

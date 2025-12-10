@@ -188,12 +188,15 @@ function GuestView() {
               <div key={photo.photo_id} className="photo-card">
                 <img
                   src={`${API_URL}${photo.thumbnail_url}`}
-                  alt={photo.caption || 'Photo'}
+                  alt={photo.tags && photo.tags.length > 0 ? photo.tags.join(', ') : 'Photo'}
                   className="photo-thumbnail"
                   onClick={() => searchSimilarImages(photo.photo_id)}
                   style={{ cursor: 'pointer' }}
                   title="Click to find similar images"
-                  onLongPress={() => downloadImage(photo.image_url)}
+                  onError={(e) => {
+                    // Fallback to full image if thumbnail fails
+                    e.target.src = `${API_URL}${photo.image_url}`;
+                  }}
                 />
                 {photo.tags && photo.tags.length > 0 && (
                   <div className="photo-tags">
