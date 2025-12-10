@@ -74,6 +74,12 @@ class SearchService:
             conditions.append(
                 FieldCondition(key="caption", match=MatchText(text=keyword))
             )
+            conditions.append(
+                FieldCondition(key="generic_text", match=MatchText(text=keyword))
+            )
+            conditions.append(
+                FieldCondition(key="photographer_text", match=MatchText(text=keyword))
+            )
         
         if conditions:
             return Filter(should=conditions)

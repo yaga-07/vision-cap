@@ -95,7 +95,11 @@ def main():
     logger.info("Loading models...")
     face_model = ModelFactory.create_face_detection_model()
     embedding_model = ModelFactory.create_embedding_model()
-    vlm = ModelFactory.create_vlm()  # May return None if loading fails
+    vlm = ModelFactory.create_vlm(
+        model_type=settings.vlm_model,
+        model_name=settings.google_genai_model,
+        api_key=settings.google_api_key
+    )  # May return None if loading fails
     
     # Initialize services
     storage_service = StorageService()

@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Optional
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from dotenv import load_dotenv
+load_dotenv()
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
@@ -35,8 +37,12 @@ class Settings(BaseSettings):
     embedding_model: str = "clip"  # Options: clip, openai-clip, etc.
     embedding_model_name: str = "clip-ViT-B-32"
     
-    vlm_model: str = "florence2"  # Options: florence2, llava, qwen-vl, etc.
-    vlm_model_name: str = "microsoft/Florence-2-base"
+    vlm_model: str = "google-genai"  # Options: florence2, genai, google-genai, etc.
+    # vlm_model_name: str = "microsoft/Florence-2-base"
+    
+    # Google GenAI Configuration
+    google_api_key: Optional[str] = os.getenv("GOOGLE_API_KEY")
+    google_genai_model: str = "gemini-flash-lite-latest"  # Options: gemini-1.5-flash, gemini-2.5-pro
     
     # Vector Configuration
     vector_size: int = 512

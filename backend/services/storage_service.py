@@ -55,7 +55,17 @@ class StorageService:
                         field_name="caption",
                         field_schema="text"
                     )
-                    logger.info("Created full-text indexes on tags and caption")
+                    self.client.create_payload_index(
+                        collection_name=self.collection_images,
+                        field_name="generic_text",
+                        field_schema="text"
+                    )
+                    self.client.create_payload_index(
+                        collection_name=self.collection_images,
+                        field_name="photographer_text",
+                        field_schema="text"
+                    )
+                    logger.info("Created full-text indexes on tags, caption, generic_text, and photographer_text")
                 except Exception as e:
                     logger.warning(f"Could not create full-text indexes: {e}")
             

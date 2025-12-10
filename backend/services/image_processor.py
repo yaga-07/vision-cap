@@ -66,16 +66,27 @@ class ImageProcessor:
             # Step 2: Image Embedding
             image_embedding = self.embedding_model.encode_image(image_path)
             
-            # Step 3: Generate Tags and Caption (if VLM available)
-            tags, caption = self._generate_metadata(image_path, face_count)
+            # Step 3: Generate structured metadata (if VLM available)
+            analysis_result = self._generate_structured_metadata(image_path, face_count)
             
-            # Combine tags
+            # Extract fields from structured analysis or use fallbacks
+            if analysis_result:
+                generic_text = analysis_result.get("generic_text", "").strip()
+                photographer_text = analysis_result.get("photographer_text", "").strip()
+                vlm_tags = analysis_result.get("tags", [])
+            else:
+                generic_text = ""
+                photographer_text = ""
+                vlm_tags = []
+            
+            # Combine tags (photo_type + VLM tags)
             all_tags = [photo_type]
-            if tags:
-                all_tags.extend(tags[:20])
+            if vlm_tags:
+                # Ensure tags are strings and filter empty ones
+                all_tags.extend([str(tag).strip() for tag in vlm_tags[:20] if str(tag).strip()])
             
-            # Use caption or fallback
-            final_caption = caption or f"Photo with {face_count} face(s)"
+            # Use generic_text as caption, with fallback
+            final_caption = generic_text or f"Photo with {face_count} face(s)"
             
             # Step 4: Store in Qdrant
             payload = {
@@ -84,7 +95,9 @@ class ImageProcessor:
                 "face_count": face_count,
                 "photo_type": photo_type,
                 "tags": all_tags,
-                "caption": final_caption,
+                "caption": final_caption,  # Keep for backward compatibility
+                "generic_text": generic_text,
+                "photographer_text": photographer_text,
                 "processed_at": datetime.now().isoformat()
             }
             
@@ -142,7 +155,7 @@ class ImageProcessor:
         image_path: str,
         face_count: int
     ) -> Tuple[List[str], Optional[str]]:
-        """Generate tags and caption using VLM."""
+        """Generate tags and caption using VLM (legacy method for backward compatibility)."""
         if self.vlm is None:
             return [], None
         
@@ -152,6 +165,22 @@ class ImageProcessor:
         except Exception as e:
             logger.warning(f"Error generating metadata: {e}")
             return [], None
+    
+    def _generate_structured_metadata(
+        self,
+        image_path: str,
+        face_count: int
+    ) -> Optional[Dict[str, Any]]:
+        """Generate structured metadata using VLM."""
+        if self.vlm is None:
+            return None
+        
+        try:
+            analysis_result = self.vlm.analyze_image_structured(image_path)
+            return analysis_result
+        except Exception as e:
+            logger.warning(f"Error generating structured metadata: {e}")
+            return None
     
     def _save_processed_image(self, image_path: str, photo_id: str):
         """Save processed image and create thumbnail."""
